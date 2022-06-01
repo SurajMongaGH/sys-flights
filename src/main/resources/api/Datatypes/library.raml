@@ -1,0 +1,60 @@
+#%RAML 1.0 Library
+
+types:
+  get-flights:
+    properties:
+      flight_id:
+        type: number
+      flight_name:
+        type: string
+      source:
+        type: string
+      destination:
+        type: string
+      date:
+        type: date-only
+      departure_time:
+        type: string
+      price:
+        type: number
+      number_of_vacant_seats:
+        type: number
+      total_seats:
+        type: number
+      
+  
+  post-flight:
+    properties:
+      flight_name:
+        type: string
+      source:
+        type: string
+      destination:
+        type: string
+      date:
+        type: date-only
+      departure_time:
+        type: string
+      price:
+        type: number
+      number_of_vacant_seats:
+        type: number
+      total_seats:
+        type: number
+      
+  
+  book-flight:
+    properties:
+      flight_id:
+        type: number
+      passenger_name:
+        type: string
+      date:
+        type: date-only
+      source:
+        type: string
+      destination:
+        type: string
+      number_of_seats:
+        type: number
+      

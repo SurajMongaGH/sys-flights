@@ -1,0 +1,82 @@
+#%RAML 1.0
+
+
+title: filghts-indigo
+uses:
+  dtypes: /Datatypes/library.raml
+/flights:
+  get:
+    description: get all flight details
+    queryParameters:
+      source:
+        type: string
+      destination:
+        type: string
+      date:
+        type: date-only
+      number_of_seats:
+        type: number
+    responses:
+      200:
+        body:
+          application/json:
+            type: dtypes.get-flights[]
+            example: !include Examples/getFlights.json
+  post:
+    description: create a flight in database
+    body:
+      application/json:
+        type: dtypes.post-flight
+        example: !include /Examples/postFlight.json
+  /{flight_id}:
+    get:
+      description: get flight details of specific flight 
+      responses:
+        200:
+          body:
+            application/json:
+              type: dtypes.get-flights
+              example: !include /Examples/getFlight.json
+    delete:
+      description: delete a flight in database
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include /Examples/deleteFlightResponse.json
+                
+
+/book-flights:
+  post:
+    description: book a flight
+    body:
+      application/json:
+        type: dtypes.book-flight
+        example: !include Examples/bookFlight.json
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include Examples/flightBooked.json
+/booking-details:
+
+  /{booking_id}:
+    get:
+      description: get booking details of a specific booking 
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include /Examples/bookingResponse.json
+    delete:
+      description: cancel booking
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include /Examples/cancelBookingResponse.json
+
+                
+              
+  
+

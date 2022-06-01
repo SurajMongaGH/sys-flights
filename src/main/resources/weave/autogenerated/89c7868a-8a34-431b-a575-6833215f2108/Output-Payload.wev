@@ -1,0 +1,15 @@
+%dw 2.0
+
+type auto_89c7868a_8a34_431b_a575_6833215f2108_Output_Payload = {
+  date: String, 
+  price: Number, 
+  flight_name: String, 
+  destination: String, 
+  number_of_vacant_seats: Number, 
+  source: String, 
+  departure_time: String, 
+  total_seats: Number, 
+  flight_id: Number, 
+  _?: Any
+}
+

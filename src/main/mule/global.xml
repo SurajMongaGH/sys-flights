@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="4d519b32-b860-46d1-ae9a-b63ad2a8a523" >
+		<db:my-sql-connection host="sql6.freesqldatabase.com" port="3306" user="sql6496356" password="9sUHPULKig" database="sql6496356" />
+	</db:config>
+	<http:listener-config name="filghts-indigo-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+     <apikit:config name="filghts-indigo-config" api="filghts-indigo.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+	<configuration doc:name="Configuration" doc:id="0b663a84-afb3-421b-8df2-4ab26aeecadd" defaultErrorHandler-ref="globalError_Handler" />
+	<api-gateway:autodiscovery apiId="17864968" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="fbaf1053-bc8d-4ae9-8982-26d07628c379" flowRef="filghts-indigo-main" />
+	<error-handler name="globalError_Handler" doc:id="09992f7a-f102-4b11-82d5-5fb97076d371" >
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="d66b40dd-dcf6-4245-8939-f98b774fcce5" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION">
+			<set-payload value="Issues connecting with database" doc:name="Set Payload" doc:id="e34ad648-f001-41a4-8f7c-a43358bc5a4d" />
+			<set-variable value="500" doc:name="Set Variable" doc:id="26721b45-411b-41a2-8f4c-aa85f10b6794" variableName="httpstatus"/>
+		</on-error-continue>
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="c26fdf81-cf27-4064-9650-c858debac0f4" >
+			<set-payload value="internal server error" doc:name="Set Payload" doc:id="10d1a5b5-8280-4da1-af26-217be12659dc" />
+			<set-variable value="500" doc:name="Set Variable" doc:id="bafb81cd-0189-441b-9fb1-eae25fdff734" variableName="httpstatus"/>
+		</on-error-continue>
+	</error-handler>
+</mule>

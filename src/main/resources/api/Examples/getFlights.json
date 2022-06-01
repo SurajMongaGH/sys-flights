@@ -1,0 +1,21 @@
+[
+{"flight_id":1,
+  "flight_name":"ibibo-1",
+  "source":"Chandigarh",
+ "destination":"Delhi",
+  "date":"2012-05-05",
+  "departure_time":"17:00",
+  "price":3000,
+  "number_of_vacant_seats":20,
+  "total_seats":30}
+,{"flight_id":2,
+  "flight_name":"ibibo-2",
+  "source":"Delhi",
+ "destination":"Chandigarh",
+  "date":"2012-05-05",
+  "departure_time":"18:00",
+  "price":3000,
+  "number_of_vacant_seats":20,
+  "total_seats":30}
+
+]

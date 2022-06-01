@@ -1,0 +1,10 @@
+{
+  "flight_id":1,
+  "passenger_name":"andy",
+   "date":"2012-05-05",
+  "source":"Chandigarh",
+ "destination":"Delhi",
+ 
+  "number_of_seats":2
+  
+ }

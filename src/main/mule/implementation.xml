@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<flow name="getAllFlights" doc:id="62323afa-c506-4305-aed5-a7add7f8d06d" >
+		<db:select doc:name="fetch flights" doc:id="9a70357f-3882-42aa-9efb-3cfd253417a4" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from flights where source=:source and destination=:destination and date=:date and number_of_vacant_seats>0]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	source:attributes.queryParams.source,
+	destination:attributes.queryParams.destination,
+	date:attributes.queryParams.date
+	
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="f61f5060-456a-4c29-9e4c-aa338e62da54" >
+			<when expression="sizeOf(payload)==0">
+				<ee:transform doc:name="No data" doc:id="750f1dd3-fb80-462d-ae67-2cbba6912d49" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"No flights available"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Java to JSON" doc:id="07c46145-d099-4696-9420-44de77039667">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	flight_id: payload01.flight_id,
+	flight_name: payload01.flight_name,
+	source: payload01.source,
+	destination: payload01.destination,
+	date: payload01.date as Date {format: "dd-MM-yyyy"},
+	departure_time: payload01.departure_time,
+	price: payload01.price,
+	number_of_vacant_seats: payload01.number_of_vacant_seats,
+	total_seats: payload01.total_seats
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<ee:transform doc:name="Flight Data" doc:id="60698ae8-dfe0-4625-95ac-6cb4452ba879" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="insertFlight" doc:id="679258b2-9c87-4e89-8143-b6567c6b8150" >
+		<db:insert doc:name="Insert" doc:id="52b0cc2e-8072-494c-87b1-da64bf438ab7" config-ref="Database_Config">
+			<db:sql ><![CDATA[insert into flights values(:flight_id,:flight_name,:source,:destination,:date,:departure_time,:price,:number_of_vacant_seats,:total_seats)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{flight_id:null} ++ payload]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Flight inserted" doc:id="85fdfff1-0ae5-4e21-ba9f-a9d0d3c66e59" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"flight added successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getFlightsByFlightId" doc:id="89c7868a-8a34-431b-a575-6833215f2108" >
+		<db:select doc:name="get flight data" doc:id="6ad09318-0d35-4218-9f81-941d0652940e" config-ref="Database_Config" >
+			<db:sql ><![CDATA[select * from flights where flight_id=:flight_id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	flight_id:attributes.uriParams.flight_id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Java to JSON" doc:id="48b75fae-1f83-4437-973a-b07ba3c9b5f0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="" doc:id="bc74be9c-f1a3-4401-8982-b8503a9a5389" >
+			<when expression="sizeOf(payload)==0" >
+				<ee:transform doc:name="No data" doc:id="9f86f68b-5890-48e0-828c-ea0ee8529035" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"No flights found "
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Flight data" doc:id="6e7f5209-2cff-4f27-8029-1c5216482701" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload[0]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="deleteFlightByFlightId" doc:id="fa1ac18e-6d9f-4a44-8fe1-9b4666290b02" >
+		<set-variable value="#[attributes.uriParams.flight_id]" doc:name="flight_id" doc:id="67a91812-437c-43d4-89ba-42c4b73a5217" variableName="flight"/>
+		<db:select doc:name="select by flight_id" doc:id="c38cab55-9edd-41da-a3ba-fc42dec1b5e7" config-ref="Database_Config" >
+			<db:sql ><![CDATA[select * from flights where flight_id=:flight_id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	flight_id:attributes.uriParams.flight_id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="java to JSON" doc:id="7b9c6c3f-7254-4d53-bc74-a7b5f247a870" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="check if exists" doc:id="12868fa9-abdb-4941-9fba-af06dee3d57b" >
+			<when expression="sizeOf(payload)==0" >
+				<ee:transform doc:name="no flights found" doc:id="b0fc8737-2b18-4356-a331-f6da3a141c68" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"No flights found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise>
+				<db:delete doc:name="Delete flight" doc:id="5e911cac-d40a-46ce-bf59-05e709253daf" config-ref="Database_Config">
+					<db:sql ><![CDATA[delete from flights where flight_id=:flight_id]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{ flight_id: vars.flight}]]]></db:input-parameters>
+				</db:delete>
+				<ee:transform doc:name="flight deleted response" doc:id="4a5d7371-5f46-445b-9fe0-448ff1dff568" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"flight deleted successfully"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="bookFlight" doc:id="f8692bc1-94c6-42e4-bb28-94bd576985ef" >
+		<set-variable value="#[payload]" doc:name="data" doc:id="87d4686f-4bd8-4cd1-85ca-740ed94a2b01" variableName="data"/>
+		<db:select doc:name="get vacant seats" doc:id="23bad07e-71ba-44c0-87b8-e31e7f02285b" config-ref="Database_Config">
+			<db:sql ><![CDATA[select number_of_vacant_seats from flights where flight_id=:flight_id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{flight_id : vars.data.flight_id}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Java to JSON" doc:id="d4e89739-2df1-4830-9419-6b0972be28fd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="52b548bd-101a-4b23-a9bd-36d74347085f" >
+			<when expression="sizeOf(payload)==0">
+				<ee:transform doc:name="No data" doc:id="b60a7b25-833c-4c03-a025-e3e49f0fd0df">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"invalid flight id"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression="#[payload[0].number_of_vacant_seats&lt;vars.data.number_of_seats]">
+				<ee:transform doc:name="seats capacity reached" doc:id="9d479ef1-00df-4f93-a25a-e6846c022b09">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"required seats exceeded vacant seats"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<db:update doc:name="Update" doc:id="a35a20e7-0e6f-40fc-aec8-4e0762de8531" config-ref="Database_Config">
+					<db:sql ><![CDATA[update flights set number_of_vacant_seats=number_of_vacant_seats-:number_of_seats where flight_id=:flight_id]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	number_of_seats:vars.data.number_of_seats,
+	flight_id:vars.data.flight_id
+}]]]></db:input-parameters>
+				</db:update>
+				<db:insert doc:name="Insert" doc:id="d6a5a7a8-0ab4-4b88-adff-ee70ce37af3a" config-ref="Database_Config">
+					<db:sql ><![CDATA[insert into bookings values(:booking_id,:passenger_name,:flight_id,:source,:destination,:date,:departure_time,:number_of_seats)]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{booking_id:null} ++ vars.data]]]></db:input-parameters>
+				</db:insert>
+				<db:select doc:name="Select" doc:id="ecb24ce4-d116-4509-923e-3b5a1106295a" config-ref="Database_Config">
+					<db:sql ><![CDATA[select booking_id from bookings order by booking_id desc limit 1]]></db:sql>
+				</db:select>
+				<ee:transform doc:name="Transform Message" doc:id="76e1b26f-3715-42cd-ae36-72b9c79d0e49">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload[0]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="Transform Message" doc:id="f3456dc3-fc49-4726-8f8e-5a76739e3f01" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{"message":"flight booked successfully with booking id : "++ "" ++ payload.booking_id as String
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="deleteBookingByBookingId" doc:id="0957036d-bc44-4ec0-af77-4a102a730123" >
+		<set-variable value="#[attributes.uriParams.booking_id]" doc:name="booking_id" doc:id="9f32a749-7200-4f8d-ae8d-6280cc9eb28b" variableName="booking" />
+		<db:select doc:name="select by booking_id" doc:id="a7a7af59-b348-4196-a62c-a911a3824282" config-ref="Database_Config" >
+			<db:sql ><![CDATA[select * from bookings where booking_id=:booking_id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	booking_id:vars.booking
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Java to JSON" doc:id="fc6c74fa-cc51-45f6-9d51-b26a08c4ec4a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="check if exists" doc:id="d7a1652c-0720-402a-8366-fbd7a33c437b" >
+			<when expression="sizeOf(payload)==0" >
+				<ee:transform doc:name="no details found" doc:id="ac84e3eb-a109-407d-ae7f-4f1679d01c6b" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"No booking details found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<set-variable value="#[payload[0].number_of_seats]" doc:name="seats" doc:id="b70c3884-edd6-4535-a33b-fe0154e1f83b" variableName="seats"/>
+				<set-variable value="#[payload[0].flight_id]" doc:name="flight_id" doc:id="a66e06be-b131-4a81-a4df-4b39543179bc" variableName="flight_id" />
+				<db:delete doc:name="cancel booking" doc:id="c5a39fd0-8fa4-4b02-9b8c-97f14b400921" config-ref="Database_Config" >
+					<db:sql ><![CDATA[delete from bookings where booking_id=:booking_id]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{ booking_id: vars.booking}]]]></db:input-parameters>
+				</db:delete>
+				<db:update doc:name="Update number of seats in flights" doc:id="55ab31f2-5606-44a6-a091-b88c1ff252c7" config-ref="Database_Config">
+					<db:sql ><![CDATA[update flights set number_of_vacant_seats=number_of_vacant_seats+:number_of_seats where flight_id=:flight_id]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{number_of_seats:vars.seats,
+	flight_id:vars.flight_id
+}]]]></db:input-parameters>
+				</db:update>
+				<ee:transform doc:name="booking cancelled" doc:id="da1bf3a9-6093-43f9-982d-30b6dc7752f8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"booking cancelled successfully"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="getBookingDetailsByBookingId" doc:id="dea4455f-72ec-4e12-b9b7-93205d60a9fa" >
+		<db:select doc:name="booking details" doc:id="789092dc-cb78-4e44-9fab-64c8be42fe04" config-ref="Database_Config" >
+			<db:sql ><![CDATA[select * from bookings where booking_id=:booking_id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	booking_id:attributes.uriParams.booking_id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Java to JSON" doc:id="f4e5cee9-d37c-4f4c-b2b7-becdd8ed73f4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="" doc:id="d33bc3f6-a0b6-4c07-b79e-091e1467adb9" >
+			<when expression="sizeOf(payload)==0" >
+				<ee:transform doc:name="No data" doc:id="643235e6-df45-48c4-8067-bc689a515057" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"No booking details found "
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="booking data" doc:id="3c0abd4b-6d61-4988-9d08-a51eb972a0de" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload[0]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>
