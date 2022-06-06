@@ -2,5 +2,5 @@
 import * from dw::test::Asserts
 ---
 payload must equalTo({
-  "message": "flight booked successfully with booking id : 5"
+  "message": "required seats exceeded vacant seats"
 })
